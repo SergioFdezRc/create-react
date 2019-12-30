@@ -3,7 +3,7 @@
 # Error control 
 # -------------------------------------------------------------- 
 if [ $# -ne 2 ]; then
-   echo el numero de parametros debe ser 2
+   echo "The number of params must be 2"
    exit
 fi 
 
@@ -123,12 +123,9 @@ case $1 in
 	replace $cur_dir/src/actions/${file_name,,}.actions.js '${UNAME}' `echo ${file_name^^}`
 	replace $cur_dir/src/actions/${file_name,,}.actions.js '${NAME}' `echo ${file_name,,}`
 
-	#if [ -f $cur_dir/src/actions/index.js ]; then
 	sed -e '$i\ ' $home/.create-react/templates/action/index.js >> $cur_dir/src/actions/index.js
 	replace $cur_dir/src/actions/index.js '${NAME}' `echo ${file_name,,}`
-	#else
-	#	cat $home/.create-react/templates/actions/index.js > $cur_dir/src/actions/index.js
-	#fi
+	
 	# Insert the Test File
 	echo "Creating action test......"
 	cat $home/.create-react/templates/action/action.test.js > $cur_dir/src/actions/__tests__/${file_name,,}.test.js
@@ -145,5 +142,3 @@ case $1 in
 	echo "Sorry, There are no concidences"
 	;;
 esac
-
-# Comprobar que 
