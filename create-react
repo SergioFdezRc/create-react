@@ -1,0 +1,149 @@
+#!/bin/bash 
+# --------------------------------------------------------------
+# Error control 
+# -------------------------------------------------------------- 
+if [ $# -ne 2 ]; then
+   echo el numero de parametros debe ser 2
+   exit
+fi 
+
+file_name=$2
+directory=$1
+cur_dir=`pwd`
+home=`eval echo ~$USER`
+
+replace() {
+	find $1 -type f -print0 | xargs -0 sed -i 's/'$2'/'$3'/g'
+	echo $1 $2 $3
+}
+
+newDirectory() {
+	if  [ ! -d $1 ]; then
+		echo "Creating ' $1 ' Directory..."
+		mkdir $1
+	fi
+}
+
+newFile() {
+	if  [ ! -f $1 ]; then
+		echo "Creating ' $1 ' File..."
+		cat > $1
+	fi
+}
+
+case $1 in
+"component")
+	# Create the src directory if not exist
+	newDirectory $cur_dir/src
+
+	# Create the components directory if not exist
+	newDirectory $cur_dir/src/components
+	
+	echo "Creating component..."
+	cat $home/.create-react/templates/component/component.js > $cur_dir/src/components/$file_name.js
+
+	sed '/class/i\/**\n* Project: ${PROJECT_NAME} \n* Implementation of ${NAME}\n* React Component\n* Radiometrics Team - ${USER}\n* Date: ${DATE} - ${TIME}\n* Version: 1.0\n*/' $cur_dir/src/components/$file_name.js > $cur_dir/src/components/$file_name'2'.js
+	mv $cur_dir/src/components/$file_name'2'.js $cur_dir/src/components/$file_name.js
+
+	# Sustituimos Name por ProyectName
+	replace $cur_dir/src/components/$file_name.js '${NAME}' $file_name
+	replace $cur_dir/src/components/$file_name.js '${USER}' `echo $USER`
+	replace $cur_dir/src/components/$file_name.js '${DATE}' `date +%d'\/'%m'\/'%Y`
+	replace $cur_dir/src/components/$file_name.js '${TIME}' `date +%X`
+	replace $cur_dir/src/components/$file_name.js '${PROJECT_NAME}' ${cur_dir##*/} 
+	
+	cat $home/.create-react/templates/component/style.css > $cur_dir/src/components/$file_name.css
+	replace $cur_dir/src/components/$file_name.css '${NAME}' $file_name
+
+	newDirectory $cur_dir/src/components/__tests__
+	cat $home/.create-react/templates/component/test-component.js > $cur_dir/src/components/__tests__/$file_name.test.js
+	replace $cur_dir/src/components/__tests__/$file_name.test.js '${NAME}' $file_name
+
+	;;
+"reducer")
+	# Create the src directory if not exists
+	newDirectory $cur_dir/src
+
+	# Create the reducers directory if not exists
+	newDirectory $cur_dir/src/reducers
+
+	# Create the reducer from the template
+	echo "Creating reducer..."
+	cat $home/.create-react/templates/reducer/reducer.js > $cur_dir/src/reducers/${file_name,,}.reducer.js
+	
+	# Replace the occurrences with the reducer name
+	replace $cur_dir/src/reducers/${file_name,,}.reducer.js '${CNAME}' `echo ${file_name^}`
+	replace $cur_dir/src/reducers/${file_name,,}.reducer.js '${UNAME}' `echo ${file_name^^}`
+	replace $cur_dir/src/reducers/${file_name,,}.reducer.js '${NAME}' `echo ${file_name,,}`
+		
+	# insert into index file...
+	if [ -f $cur_dir/src/reducers/index.js ]; then
+		sed '/import {combineReducers} from "redux";/a\import '`echo ${file_name,,}`'Reducer from \"./'`echo ${file_name,,}`'.reducer\";' $cur_dir/src/reducers/index.js > $cur_dir/src/reducers/index'2'.js
+		mv $cur_dir/src/reducers/index'2'.js $cur_dir/src/reducers/index.js
+
+		sed '/});/i\	'`echo ${file_name,,}`'State: '`echo ${file_name,,}`'Reducer,' $cur_dir/src/reducers/index.js > $cur_dir/src/reducers/index'2'.js
+ 		mv $cur_dir/src/reducers/index'2'.js $cur_dir/src/reducers/index.js
+
+
+	else
+		cat $home/.create-react/templates/reducer/index.js > $cur_dir/src/reducers/index.js
+	fi
+		replace $cur_dir/src/reducers/index.js '${NAME}' `echo ${file_name,,}`
+
+	# Create the constants directory if not exists
+	newDirectory $cur_dir/src/constants
+
+	echo "Inserting actionTypes..."
+	# Insert the data from the template
+	sed -e '$i\ ' $home/.create-react/templates/constants/actionTypes.js >> $cur_dir/src/constants/actionTypes.js
+	
+	# Replace the occurrences with the reducer name
+	replace $cur_dir/src/constants/actionTypes.js '${UNAME}' `echo ${file_name^^}`
+
+	# Insert the Test File
+	echo "Creating reducer test......"
+	
+	newDirectory $cur_dir/src/reducers/__tests__
+	cat $home/.create-react/templates/reducer/reducer.test.js > $cur_dir/src/reducers/__tests__/${file_name,,}.test.js
+	replace $cur_dir/src/reducers/__tests__/${file_name,,}.test.js '${NAME}' `echo ${file_name,,}`
+	replace $cur_dir/src/reducers/__tests__/${file_name,,}.test.js '${UNAME}' `echo ${file_name^^}`
+	replace $cur_dir/src/reducers/__tests__/${file_name,,}.test.js '${CNAME}' `echo ${file_name^}`
+
+	;;
+"action")
+	echo "Creating action..."
+	newDirectory $cur_dir/src
+	newDirectory $cur_dir/src/actions
+	newDirectory $cur_dir/src/actions/__tests__
+
+	cat $home/.create-react/templates/action/action.js > $cur_dir/src/actions/${file_name,,}.actions.js
+	
+	# Replace the occurrences with the reducer name	
+	replace $cur_dir/src/actions/${file_name,,}.actions.js '${CNAME}' `echo ${file_name^}`
+	replace $cur_dir/src/actions/${file_name,,}.actions.js '${UNAME}' `echo ${file_name^^}`
+	replace $cur_dir/src/actions/${file_name,,}.actions.js '${NAME}' `echo ${file_name,,}`
+
+	#if [ -f $cur_dir/src/actions/index.js ]; then
+	sed -e '$i\ ' $home/.create-react/templates/action/index.js >> $cur_dir/src/actions/index.js
+	replace $cur_dir/src/actions/index.js '${NAME}' `echo ${file_name,,}`
+	#else
+	#	cat $home/.create-react/templates/actions/index.js > $cur_dir/src/actions/index.js
+	#fi
+	# Insert the Test File
+	echo "Creating action test......"
+	cat $home/.create-react/templates/action/action.test.js > $cur_dir/src/actions/__tests__/${file_name,,}.test.js
+	replace $cur_dir/src/actions/__tests__/${file_name,,}.test.js '${NAME}' `echo ${file_name,,}`
+	replace $cur_dir/src/actions/__tests__/${file_name,,}.test.js '${UNAME}' `echo ${file_name^^}`
+	replace $cur_dir/src/actions/__tests__/${file_name,,}.test.js '${CNAME}' `echo ${file_name^}`
+
+
+	;;
+"saga")
+	echo "Creating saga...."
+	;;
+*)
+	echo "Sorry, There are no concidences"
+	;;
+esac
+
+# Comprobar que 
